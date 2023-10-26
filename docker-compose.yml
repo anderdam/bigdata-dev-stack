@@ -1,0 +1,138 @@
+version: "3"
+
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:latest
+    volumes:
+      - namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ./hadoop-hive.env
+    ports:
+      - "50070:50070"
+    ulimits:
+      nofile:
+        soft: "65536"
+        hard: "65536"
+    
+  datanode:
+    image: bde2020/hadoop-datanode:latest
+    volumes:
+      - datanode:/hadoop/dfs/data
+    env_file:
+      - ./hadoop-hive.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070"
+    ports:
+      - "50075:50075"
+    ulimits:
+      nofile:
+        soft: "65536"
+        hard: "65536"
+
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:latest
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075"
+    env_file:
+      - ./hadoop-hive.env
+    ulimits:
+      nofile:
+        soft: "65536"
+        hard: "65536"
+
+  hive-server:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    env_file:
+      - ./hadoop-hive.env
+    environment:
+      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
+      SERVICE_PRECONDITION: "hive-metastore:9083"
+    ports:
+      - "10000:10000"
+
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    env_file:
+      - ./hadoop-hive.env
+    command: /opt/hive/bin/hive --service metastore
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088"
+    ports:
+      - "9083:9083"
+
+  hive-metastore-postgresql:
+    image: bde2020/hive-metastore-postgresql:2.3.0
+    ports:
+      - "5432:5432"
+  
+  spark-master:
+    image: bde2020/spark-master:latest
+    container_name: spark-master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    environment:
+      - INIT_DAEMON_STEP=setup_spark
+  spark-worker-1:
+    image: bde2020/spark-worker:latest
+    container_name: spark-worker-1
+    depends_on:
+      - spark-master
+    ports:
+      - "8081:8081"
+        #    environment:
+        #- "SPARK_MASTER=spark://spark-master:7077"
+    environment:
+      - "SPARK_MASTER=spark://resourcemanager:7077"
+      - "SPARK_EXECUTOR_MEMORY=4g"
+      - "SPARK_DRIVER_MEMORY=2g"
+      - "SPARK_DEFAULT_PARALLELISM=4"
+      - "SPARK_EVENTLOG_ENABLED=true"
+      - "SPARK_EVENTLOG_DIR=/spark-events"
+
+
+  postgres:
+    image: postgres:16-alpine
+    volumes:
+      - pg_data:/var/lib/postgresl/data/
+    ports:
+      - "5432"
+    env_file:
+      - ./hadoop-hive.env
+    environment:
+        SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083"
+  
+  cassandra:
+    image: cassandra:5.0
+    ports:
+      - 9042:9042
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    environment:
+      - CASSANDRA_CLUSTER=test
+
+  hue:
+    image: gethue/hue:4.6.0
+    environment:
+        SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083 postgres:5000"
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./hue-overrides.ini:/usr/share/hue/desktop/conf/hue-overrides.ini
+    links:
+      - postgres
+
+  python:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SPARK_MASTER=spark://resourcemanager:7077
+
+volumes:
+  namenode:
+  datanode:
+  pg_data:
+  cassandra_data:
