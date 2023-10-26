@@ -1,7 +1,8 @@
 # Docker Compose Configuration for Hadoop, Hive, Spark, PostgreSQL, Cassandra, and Hue
 
-This repository provides a configuration for running a multi-service environment, based on [Big Data Europe's repositories](https://github.com/big-data-europe)  
-consisting of Hadoop, Hive, Spark, PostgreSQL, Cassandra, and Hue. It allows developers to easily set up and manage these services within Docker containers.
+This repository provides a configuration for running a multi-service environment, based on [Big Data Europe's repositories](https://github.com/big-data-europe), consisting of: Hadoop, Hive, Spark, PostgreSQL, Cassandra, and Hue. 
+
+It allows developers to easily set up and manage these services within Docker containers.
 
 ## Hadoop Services
 - Namenode
