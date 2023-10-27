@@ -4,6 +4,14 @@ This repository provides a configuration for running a multi-service environment
 
 It allows developers to easily set up and manage these services within Docker containers.
 
+## Index
+- [Hadoop Services](https://github.com/anderdam/bigdata-dev-stack/edit/main/README.md#hadoop-services)
+- [Spark Services](https://github.com/anderdam/bigdata-dev-stack/edit/main/README.md#spark-services)
+- [Databases](https://github.com/anderdam/bigdata-dev-stack/edit/main/README.md#databases)
+- [Other Services](https://github.com/anderdam/bigdata-dev-stack/edit/main/README.md#other-services)
+- [Volumes](https://github.com/anderdam/bigdata-dev-stack/edit/main/README.md#volumes)
+- [Users](https://github.com/anderdam/bigdata-dev-stack/edit/main/README.md#windows-users)
+
 ## Hadoop Services
 - Namenode
 - Datanode
@@ -37,3 +45,13 @@ To start the services, navigate to the directory containing the `docker-compose.
     
     docker-compose up -d
     
+## Windows users
+If you are getting error:
+
+    Error response from daemon: Ports are not available: exposing port TCP 0.0.0.0:50070 -> 0.0.0.0:0: listen tcp 0.0.0.0:50070: bind: An attempt was made to access a socket in a way forbidden by its access permissions.
+
+In a PowerShell terminal as administrator, run:
+
+    net stop winnat
+    docker start / run (start your container)
+    net start winnat
